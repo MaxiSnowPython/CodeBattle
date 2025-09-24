@@ -1,0 +1,75 @@
+
+{% extends 'matchmaking_app/main.html' %}
+{% load static %}
+{% block css %}
+{% static 'css/hub_view.css' %}
+{% endblock css %}
+{% block content %}
+
+<aside class="sidebar">
+    <button class="sidebar-button add-team-btn">
+        <span class="icon"><a href="{% url "hub" %}">🏠</a></span>
+    </button>
+    <h2 class="sidebar-title">Команды</h2>
+    <a href = "">
+        <button class="sidebar-button"></button>
+    </a>
+
+<a href = "">
+    <button class="sidebar-button add-team-btn">
+        <span class="icon">+</span>
+    </button>
+</a>
+
+<form method="post" action="">
+    {% csrf_token %}
+    <a href="">
+        <button class="sidebar-button settings-btn">
+            <span class="icon">🚪</span>
+        </button>
+    </a>
+</form>
+    <a href = "">
+    <button class="sidebar-button user-btn">
+        <span class="icon">👤</span>
+    </button>
+
+</a>
+</aside>
+
+
+    <div class="container">
+        <h1>🎮 Welcome to Matchmaking!</h1>
+        <h2>Hello, {{ user.username }} 👋</h2>
+        
+        {% if status == 'waiting' %}
+            <div class="status waiting">
+                🔍 Ищем соперника... Обновите страницу через несколько секунд
+            </div>
+            <form method="get">
+                <input type="hidden" name="token" value="{{ request.GET.token }}">
+                <button type="submit" class="button" name = "leave">Покинуть очередь</button>
+            </form>
+        {% elif error %}
+            <div class="status error">
+                ❌ {{ error }}
+            </div>
+        {% endif %}
+        
+        <form method="post" >
+            
+            <input type="hidden" name="token" value="{{ request.GET.token }}">
+{% csrf_token %}
+            <button type="submit" name = "find_match">
+                🚀 Найти матч
+            </button>
+
+        </form>
+        
+        <br>
+        <a href="http://127.0.0.1:8001/auth/login/" class="button" style="background: #6c757d;">
+            🚪 Выйти
+        </a>
+    </div>
+
+{% endblock content %}
