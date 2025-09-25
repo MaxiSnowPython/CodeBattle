@@ -82,13 +82,14 @@ class JoinMatchView(View):
     )
     def post(self, request):
         token = request.GET.get("token")
+        
         if not token:
             return HttpResponse('<a href="/auth/login/">Войти</a>')
 
         access = AccessToken(token)
         user_id = access["user_id"]
         user = User.objects.get(id=user_id)
-        
+        username = access.get("username", f"user_{user_id}")
         # Проверяем очередь
         waiting_player = MatchQueue.objects.exclude(user=user).first()
         
@@ -103,7 +104,7 @@ class JoinMatchView(View):
             event = {
                 "event": "game_created",
                 "room_id": room.id,
-                "players": [waiting_player.user.id, user.id],
+                "players": [waiting_player.user.username,username],
                 "task_id": 5  # например, id задачи для игры
             }
             self.producer.send("games", event)
