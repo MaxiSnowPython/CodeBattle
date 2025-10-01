@@ -127,7 +127,7 @@
         <div class="players">
             <div class="player {% if user == room.player1 %}current-user{% endif %}">
                 {{ room.player1.username }}
-                {% if user == room.player1 %}<br><small>👑 Это вы!</small>{% endif %}
+                {% if user == room.player1_u %}<br><small>👑 Это вы!</small>{% endif %}
             </div>
             <div style="display: flex; align-items: center; font-size: 20px;">⚔️ VS ⚔️</div>
             <div class="player {% if user == room.player2 %}current-user{% endif %}">
