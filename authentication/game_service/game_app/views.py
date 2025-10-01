@@ -31,4 +31,4 @@ class RoomView(View):
                 "player2_id":room.player2_id,
                 "player2_username":room.player2_name,
         })
-    
+    #lox
