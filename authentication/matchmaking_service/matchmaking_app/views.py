@@ -4,30 +4,27 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model
 from django.db import models
-from .models import MatchQueue, GameRoom, Task, TaskSubmission
+from .models import MatchQueue
 from django.shortcuts import get_object_or_404
 from django.views import View
 from kafka import KafkaProducer
-import json
+import json 
+import requests
 
 User = get_user_model()
 class JoinMatchView(View):
-
-
     def get(self, request):
         token = request.GET.get("token")
-        # Получаем токен
+
         if not token:
             return HttpResponse('<a href="http://127.0.0.1:8000/auth/login/">Войти</a>')
-        # Если нет токена то перекидует на логин
+
         try:
             access = AccessToken(token)
            
             user_id = access["user_id"]
             username = access.get("username", f"user_{user_id}")
-            # Получаем инфу с токена
-            
-            # Попробуй найти пользователя, если нет - создай
+
             try:
                 user = User.objects.get(id=user_id)
                 if user.username != username:
@@ -38,18 +35,7 @@ class JoinMatchView(View):
                 user.set_password("gey123e")
                 user.save()
             
-            # Проверяем, не в активной игре ли пользователь
 
-            active_room = GameRoom.objects.filter(
-                models.Q(player1=user) | models.Q(player2=user),
-                is_active=True,
-                is_finished=False
-            ).first()
-            if active_room:
-                return redirect(f"http://localhost:8002/game/room/{active_room.id}/?token={token}")
-           
-           
-            # Проверяем статус очереди
             status = None
             error = None
             if "leave" in request.GET:
@@ -59,7 +45,11 @@ class JoinMatchView(View):
             
             if MatchQueue.objects.filter(user=user).exists():
                 status = 'waiting'
-            
+            mq = MatchQueue.objects.filter(user=user).first()
+            if mq and mq.room_id:
+                room_id = mq.room_id
+                mq.delete()
+                return redirect(f"http://localhost:8002/game/room/{room_id}/?token={token}")
             return render(request, "matchmaking_app/hub.html", {
                 "user": user, 
                 "status": status,
@@ -72,14 +62,13 @@ class JoinMatchView(View):
         
 
     queue = []
-    # создаём Kafka продюсер
+
     producer = KafkaProducer(
             bootstrap_servers="localhost:9092",
             value_serializer=lambda v: json.dumps(v).encode()
     )
     def post(self, request):
         token = request.GET.get("token")
-        
         if not token:
             return HttpResponse('<a href="/auth/login/">Войти</a>')
 
@@ -87,29 +76,23 @@ class JoinMatchView(View):
         user_id = access["user_id"]
         user = User.objects.get(id=user_id)
         username = access.get("username", f"user_{user_id}")
-        # Проверяем очередь
+
         waiting_player = MatchQueue.objects.exclude(user=user).first()
-        
 
         if waiting_player:
-            # Создаём комнату
-            room = GameRoom.objects.create(player1=waiting_player.user, player2=user)
-            MatchQueue.objects.filter(user=user).delete()
-            waiting_player.delete()
 
-
-            # --- добавляем событие в Kafka ---
             event = {
-                "event": "game_created",
-                "room_id": room.id,
-                "players": [waiting_player.user.id,waiting_player.user.username,user.id,username],
-                "task_id": 5  # например, id задачи для игры
+                "event": "match_found",
+                "players": [
+                    waiting_player.user.id,
+                    waiting_player.user.username,
+                    user.id,
+                    username
+                ],
             }
             self.producer.send("games", event)
-            # -----------------------------------
-            
-            return redirect(f"http://localhost:8002/game/room/{room.id}/?token={token}")
+            MatchQueue.objects.get_or_create(user=user)
+            return redirect(f"/match/hub/?token={token}")
         else:
-            # Добавляем себя в очередь, если никого нет
             MatchQueue.objects.get_or_create(user=user)
             return redirect(f"/match/hub/?token={token}")

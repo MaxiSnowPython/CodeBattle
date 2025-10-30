@@ -17,24 +17,23 @@ from django.contrib.auth.models import User
 import requests
 
 from django.http import JsonResponse
-MATCH_SERVICE_URL = "http://localhost:8002/match/create_user/"  # endpoint в match_service
 
 
 class RegisterView(FormView):
     template_name = 'auth/register_form.html'
     form_class = UserCreationForm
     def form_valid(self, form):
-        # Сохраняем пользователя
+
         user = form.save()
-        # Логиним пользователя
+
         login(self.request, user)
         
-        # Создаем токен
+
         refresh = RefreshToken.for_user(user)
         refresh['username']= user.username
         access_token = str(refresh.access_token)
         
-        # Редирект на матчмейкинг
+
         return redirect(f"http://127.0.0.1:8001/match/hub/?token={access_token}")
     
     def form_invalid(self, form):
@@ -54,17 +53,17 @@ class CustomLoginView(LoginView):
  
 
     def form_valid(self, form):
-        # Логиним пользователя вручную (без редиректа)
+
         user = form.get_user()
         
         login(self.request, user)
         
-        # Создаем токен
+
         refresh = RefreshToken.for_user(user)
         refresh['username']= user.username
         print(refresh['username'])
         access_token = str(refresh.access_token)
-        # Редирект на матчмейкинг
+
         return redirect(f"http://127.0.0.1:8001/match/hub/?token={access_token}")
     
     def form_invalid(self, form):

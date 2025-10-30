@@ -125,14 +125,20 @@
     <div class="header">
         <h1>🚀 Coding Battle - Room #{{ room.id }}</h1>
         <div class="players">
-            <div class="player {% if user == room.player1 %}current-user{% endif %}">
+            <div class="player {% if user.id == room.player1.id %}current-user{% endif %}">
                 {{ room.player1.username }}
-                {% if user == room.player1_u %}<br><small>👑 Это вы!</small>{% endif %}
+                {% if user.id == room.player1.id %}
+                    <br><small>👑 Это вы!</small>
+                {% endif %}
             </div>
+
             <div style="display: flex; align-items: center; font-size: 20px;">⚔️ VS ⚔️</div>
-            <div class="player {% if user == room.player2 %}current-user{% endif %}">
+
+            <div class="player {% if user.id == room.player2.id %}current-user{% endif %}">
                 {{ room.player2.username }}
-                {% if user == room.player2 %}<br><small>👑 Это вы!</small>{% endif %}
+                {% if user.id == room.player2.id %}
+                    <br><small>👑 Это вы!</small>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -170,7 +176,6 @@
                 <textarea readonly>{{ last_code }}</textarea>
                 <p style="color: #6c757d;"><em>Игра завершена. Код заблокирован.</em></p>
             {% else %}
-            
                 <form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="token" value="{{ request.GET.token }}">
@@ -179,11 +184,10 @@
                         <button type="submit" class="button submit-btn">🚀 Отправить решение</button>
                     </div>
                     <div>
-                    <button type="submit" name = "leaveroom">Покинуть комнату</button> 
+                        <button type="submit" name="leaveroom">Покинуть комнату</button> 
                     </div>
                 </form>
             {% endif %}
-            
             
             {% if last_submission %}
                 <div class="result {% if last_submission.is_correct %}success{% else %}error{% endif %}">
