@@ -38,3 +38,24 @@ class RoomView(View):
                 "room":room,
                 "user": user,
         })
+    def post(self,request,id):
+        token = request.GET.get("token")
+        try:
+            access = AccessToken(token)
+            user_id = access["user_id"]
+            user = User.objects.get(id=user_id)
+        except TokenError:
+            return HttpResponse("❌ Токен недействителен или истёк. <a href='/auth/login/'>Войти заново</a>")
+        try:
+            room = GameRoom.objects.get(id=id)
+        except GameRoom.DoesNotExist:
+            return HttpResponse("Комната не найдена")
+    
+        if "leave" in request.POST:
+            GameRoom.objects.filter(user=user).delete()
+            status = "leave"
+            return HttpResponse("Комната не найдена")
+        return render(request, "game/room.html", {
+                "room":room,
+                "user": user,
+        })
