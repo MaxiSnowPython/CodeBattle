@@ -118,94 +118,105 @@
     </style>
 </head>
 <body>
-    <div class="refresh-notice">
-        🔄 Страница автоматически обновляется каждые 5 секунд для проверки статуса игры
-    </div>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Coding Battle — Комната #{{ room.id }}</h1>
 
-    <div class="header">
-        <h1>🚀 Coding Battle - Room #{{ room.id }}</h1>
-        <div class="players">
-            <div class="player {% if user.id == room.player1.id %}current-user{% endif %}">
-                {{ room.player1.username }}
-                {% if user.id == room.player1.id %}
-                    <br><small>👑 Это вы!</small>
-                {% endif %}
-            </div>
-
-            <div style="display: flex; align-items: center; font-size: 20px;">⚔️ VS ⚔️</div>
-
-            <div class="player {% if user.id == room.player2.id %}current-user{% endif %}">
-                {{ room.player2.username }}
-                {% if user.id == room.player2.id %}
-                    <br><small>👑 Это вы!</small>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    {% if room.is_finished %}
-        {% if room.winner == user %}
-            <div class="game-finished winner">
-                🎉 Поздравляем! Вы выиграли! 🎉
-                <br><small>Вы решили задачу первым!</small>
-            </div>
-        {% else %}
-            <div class="game-finished loser">
-                😔 Игра окончена. Победил: {{ room.winner.username }}
-                <br><small>В следующий раз повезет больше!</small>
-            </div>
-        {% endif %}
-    {% endif %}
-
-    <div class="game-container">
-        <div class="panel">
-            <h2 class="task-title">📝 Задача: {{ room.task.title }}</h2>
-            <div>{{ room.task.description|linebreaks }}</div>
-            <hr>
-            <p><strong>Ожидаемый результат:</strong> <code>{{ room.task.expected_output }}</code></p>
-            {% if room.task.initial_code %}
-                <p><strong>Начальный код:</strong></p>
-                <pre style="background: #f8f9fa; padding: 10px; border-radius: 5px;">{{ room.task.initial_code }}</pre>
-            {% endif %}
-        </div>
-        
-        <div class="panel">
-            <h3>💻 Ваш код:</h3>
-            
-            {% if room.is_finished %}
-                <textarea readonly>{{ last_code }}</textarea>
-                <p style="color: #6c757d;"><em>Игра завершена. Код заблокирован.</em></p>
-            {% else %}
-                <form method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="token" value="{{ request.GET.token }}">
-                    
-                    <div>
-                        <button type="submit" class="button submit-btn">🚀 Отправить решение</button>
-                    </div>
-                    <div>
-                        <button type="submit" name="leave" >Покинуть комнату</button> 
-                    </div>
-                </form>
-            {% endif %}
-            
-            {% if last_submission %}
-                <div class="result {% if last_submission.is_correct %}success{% else %}error{% endif %}">
-                    <strong>Последний результат:</strong><br>
-                    {% if last_submission.is_correct %}
-                        ✅ Правильно! Результат: {{ last_submission.result }}
-                    {% else %}
-                        {% if "ОШИБКА:" in last_submission.result %}
-                            ❌ {{ last_submission.result }}
-                        {% else %}
-                            ❌ Неправильно<br>
-                            Ваш результат: {{ last_submission.result }}<br>
-                            Ожидается: {{ room.task.expected_output }}
-                        {% endif %}
+            <div class="players">
+                <div class="player {% if user.id == room.player1.id %}current-user{% endif %}">
+                    👤 {{ room.player1.username|default:"Ожидание..." }}
+                    {% if user.id == room.player1.id %}
+                        <br><small>👑 Это вы!</small>
                     {% endif %}
                 </div>
+
+                <div style="font-size: 24px; color: #333;">⚔️ VS ⚔️</div>
+
+                <div class="player {% if user.id == room.player2.id %}current-user{% endif %}">
+                    👤 {{ room.player2.username|default:"Ожидание..." }}
+                    {% if user.id == room.player2.id %}
+                        <br><small>👑 Это вы!</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% if room.is_finished %}
+            {% if room.winner_name == user.username %}
+                <div class="game-finished winner">
+                    🎉 Поздравляем! Вы выиграли!
+                    <br><small>Вы решили задачу первым!</small>
+                </div>
+            {% else %}
+                <div class="game-finished loser">
+                    😔 Игра окончена. Победил: {{ room.winner_name }}
+                    <br><small>В следующий раз повезёт больше!</small>
+                </div>
             {% endif %}
+        {% endif %}
+
+        <div class="game-container">
+            <div class="panel">
+                <h2>📝 {{ room.task.title }}</h2>
+                <p>{{ room.task.description|linebreaks }}</p>
+                <hr>
+                <p><strong>Ожидаемый результат:</strong> <code>{{ room.task.expected_output }}</code></p>
+            </div>
+
+           <div class="panel">
+    <h3>💻 Ваше решение</h3>
+
+    {% if room.is_finished %}
+        <textarea readonly rows="10" cols="60">
+{{ room.task.initial_code }}
+        </textarea>
+        <p style="color: gray;">Игра завершена. Код заблокирован.</p>
+    {% else %}
+        <form method="post">
+            {% csrf_token %}
+
+            <textarea name="code" rows="12" cols="70">
+def solution(nums):
+    return sum(nums)
+            </textarea>
+
+            <br><br>
+
+            <button type="submit" name="submit_solution" class="button">
+                🚀 Отправить решение
+            </button>
+
+            <button type="submit" name="leave" class="button leave-btn">
+                🚪 Покинуть комнату
+            </button>
+        </form>
+    {% endif %}
+
+    {% if result %}
+        <hr>
+
+        {% if result.error %}
+            <pre style="color:red">{{ result.error }}</pre>
+        {% else %}
+            <h4>Результаты тестов:</h4>
+
+            {% for r in result.results %}
+                {% if r.passed %}
+                    ✅
+                {% else %}
+                    ❌
+                {% endif %}
+                input={{ r.input }}
+                | output={{ r.output }}
+                | expected={{ r.expected }}
+                <br>
+            {% endfor %}
+        {% endif %}
+    {% endif %}
+</div>
         </div>
     </div>
+
+    
 </body>
 </html>
